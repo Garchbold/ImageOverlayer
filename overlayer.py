@@ -4,12 +4,6 @@ import os
 import sys
 from PIL import Image
 
-# define colors
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-GREEN = (0, 255, 0)
-RED = (255, 0, 0)
-
 class GameObject(pygame.sprite.Sprite):
 	def __init__(self, image, pos):
 		pygame.sprite.Sprite.__init__(self) # sprite initializer
@@ -19,6 +13,25 @@ class GameObject(pygame.sprite.Sprite):
 		self.rect.center = pos # center(x, y)
 		self.x = 0
 		self.y = 0
+
+def between(color, cmp_color, range):
+    if color[0] < cmp_color[0] + range and color[0] > cmp_color[0] - range:
+	if color[1] < cmp_color[1] + range and color[1] > cmp_color[1] - range:
+            if color[2] < cmp_color[2] + range and color[2] > cmp_color[2] - range:
+                return True
+
+def removeBackground(filePath):
+    img = Image.open(filePath)
+    img = img.convert("RGBA")
+    r, g, b, a = img.getpixel((1, 1))
+    pixdata = img.load()
+    background = (r, g, b, a)
+
+    for y in xrange(img.size[1]):
+        for x in xrange(img.size[0]):
+            if between(pixdata[x,y], background, 40):
+                pixdata[x, y] = (255, 255, 255, 0)
+    img.save(filePath, 'PNG')
 
 pygame.init() 
 
@@ -30,17 +43,22 @@ def resize(folder, fileName):
     size = (screen_width, screen_height)
     screen = pygame.display.set_mode(size)
 
+    # --- test for a white background --- #
+
+    img_test = Image.open(filePath)
+    img_test = img_test.convert("RGBA")
+    r, g, b, a = img_test.getpixel((1, 1))
+    if r > 240 and g > 240 and b > 240:
+	removeBackground(filePath)
+
     background_image = pygame.image.load("flux.jpg").convert()
     
-    logo_image = pygame.image.load(fileName).convert_alpha()
+    logo_image = pygame.image.load(filePath).convert_alpha()
     size = logo_image.get_rect()
     width = size.width
     height = size.height
 
-    # LOGO 1 CENTER = (460, 320)
-    # LOGO 2 CENTER = (890, 350)
-
-    # conditionals for different logo sizes
+    # --- conditionals for different logo sizes --- #
 
     ratio = (height/width)
 
@@ -59,7 +77,7 @@ def resize(folder, fileName):
     logo = GameObject(logo_image, (460, 320))
     all_sprites_list.add(logo)
 
-    logo_image_2 = pygame.image.load(fileName).convert_alpha()
+    logo_image_2 = pygame.image.load(filePath).convert_alpha()
     logo_image_2 = pygame.transform.scale(logo_image_2, (int(width*flux_scale), int(height*flux_scale)))
     logo_image_2 = pygame.transform.rotate(logo_image_2, 90)
     logo_2 = GameObject(logo_image_2, (890, 350))
